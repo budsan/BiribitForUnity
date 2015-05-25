@@ -40,6 +40,8 @@ namespace Silver
 				if (root == null)
 				{
 					root = Helper.CreateGUIGameObject(TabName());
+					var image = root.AddComponent<UnityEngine.UI.Image>();
+					image.color = new Color(1, 1, 1, 0);
 					Helper.SetRectTransform(root, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0);
 					ui.Parent = root;
 				}

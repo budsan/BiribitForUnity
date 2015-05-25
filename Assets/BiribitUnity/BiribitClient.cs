@@ -413,6 +413,7 @@ public class BiribitClient
 	private ArrayHolder<brbt_Room> m_roomArray = new ArrayHolder<brbt_Room>();
 	private Room[] m_rooms = new Room[0];
 	private NativeBuffer m_sendBuffer = new NativeBuffer();
+	private Dictionary<uint, int> m_remoteClientById = new Dictionary<uint, int>();
 
 	//-----------------------------------------------------------------------//
 
@@ -442,102 +443,103 @@ public class BiribitClient
 			NativeMethods.brbt_DeleteClient(m_client);
 	}
 
-	public void GetClientPtr()
+	public uint GetClientPtr()
 	{
 		if (m_client == 0)
-		{
-			UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 			m_client = NativeMethods.brbt_CreateClient();
-		}
+
+		return m_client;
 	}
 
 	public void Connect(string address, ushort port = 0, string password = "")
 	{
-		GetClientPtr();
-		NativeMethods.brbt_Connect(m_client, address, port, password);
+		NativeMethods.brbt_Connect(GetClientPtr(), address, port, password);
 	}
 
 	public void Disconnect(uint connectionId)
 	{
-		GetClientPtr();
-		NativeMethods.brbt_Disconnect(m_client, connectionId);
+		NativeMethods.brbt_Disconnect(GetClientPtr(), connectionId);
 	}
 
 	public void Disconnect()
 	{
-		GetClientPtr();
-		NativeMethods.brbt_DisconnectAll(m_client);
+		NativeMethods.brbt_DisconnectAll(GetClientPtr());
 	}
 
 	public void DiscoverOnLan(ushort port = 0)
 	{
-		GetClientPtr();
-		NativeMethods.brbt_DiscoverOnLan(m_client, port);
+		NativeMethods.brbt_DiscoverOnLan(GetClientPtr(), port);
 	}
 
 	public void ClearDiscoverInfo()
 	{
-		GetClientPtr();
-		NativeMethods.brbt_ClearDiscoverInfo(m_client);
+		NativeMethods.brbt_ClearDiscoverInfo(GetClientPtr());
 	}
 
 	public void RefreshDiscoverInfo()
 	{
-		GetClientPtr();
-		NativeMethods.brbt_RefreshDiscoverInfo(m_client);
+		NativeMethods.brbt_RefreshDiscoverInfo(GetClientPtr());
 	}
 
 	public ServerInfo[] GetDiscoverInfo()
 	{
-		GetClientPtr();
 		uint revision = 0;
-		brbt_ServerInfo_array array = NativeMethods.brbt_GetDiscoverInfo(m_client, ref revision);
+		brbt_ServerInfo_array array = NativeMethods.brbt_GetDiscoverInfo(GetClientPtr(), ref revision);
 		return m_serverInfoArray.GetArray(revision, array.arr, array.size) ;
 	}
 
 	public ServerConnection[] GetConnections()
 	{
-		GetClientPtr();
 		uint revision = 0;
-		brbt_ServerConnection_array array = NativeMethods.brbt_GetConnections(m_client, ref revision);
+		brbt_ServerConnection_array array = NativeMethods.brbt_GetConnections(GetClientPtr(), ref revision);
 		return m_serverConnectionArray.GetArray(revision, array.arr, array.size);
 	}
 
 	public RemoteClient[] GetRemoteClients(uint connectionId)
 	{
-		GetClientPtr();
+		bool changed = false;
 		uint revision = 0;
-		brbt_RemoteClient_array array = NativeMethods.brbt_GetRemoteClients(m_client, connectionId, ref revision);
-		return m_remoteClientArray.GetArray(revision, array.arr, array.size);
+		brbt_RemoteClient_array array = NativeMethods.brbt_GetRemoteClients(GetClientPtr(), connectionId, ref revision);
+		RemoteClient[] remoteClient = m_remoteClientArray.GetArray(revision, array.arr, array.size, out changed);
+		if (changed)
+		{
+			m_remoteClientById.Clear();
+			for (int i = 0; i < remoteClient.Length; i++)
+				m_remoteClientById.Add(remoteClient[i].id, i);
+		}
+		return remoteClient;
+	}
+
+	public int GetRemoteClientArrayPos(uint clientId)
+	{
+		int client = -1;
+		m_remoteClientById.TryGetValue(clientId, out client);
+		return client;
 	}
 
 	public uint GetLocalClientId(uint connectionId)
 	{
-		GetClientPtr();
-		return NativeMethods.brbt_GetLocalClientId(m_client, connectionId);
+		return NativeMethods.brbt_GetLocalClientId(GetClientPtr(), connectionId);
 	}
 
 	public void SetLocalClientParameters(uint connectionId, string clientName, string appId = "")
 	{
-		GetClientPtr();
 		brbt_ClientParameters parameters = new brbt_ClientParameters();
 		parameters.name = clientName;
 		parameters.appid = appId;
-		NativeMethods.brbt_SetLocalClientParameters(m_client, connectionId, parameters);
+		NativeMethods.brbt_SetLocalClientParameters(GetClientPtr(), connectionId, parameters);
 	}
 
 	public void RefreshRooms(uint connectionId)
 	{
-		GetClientPtr();
-		NativeMethods.brbt_RefreshRooms(m_client, connectionId);
+		NativeMethods.brbt_RefreshRooms(GetClientPtr(), connectionId);
 	}
 
 	public Room[] GetRooms(uint connectionId)
 	{
-		GetClientPtr();
 		bool changed = false;
 		uint revision = 0;
-		brbt_Room_array array = NativeMethods.brbt_GetRooms(m_client, connectionId, ref revision);
+		brbt_Room_array array = NativeMethods.brbt_GetRooms(GetClientPtr(), connectionId, ref revision);
 		brbt_Room[] rooms = m_roomArray.GetArray(revision, array.arr, array.size, out changed);
 		if (changed)
 		{
@@ -560,73 +562,53 @@ public class BiribitClient
 
 	public void CreateRoom(uint connectionId, uint slotsCount)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		NativeMethods.brbt_CreateRoom(m_client, connectionId, slotsCount);
+		NativeMethods.brbt_CreateRoom(GetClientPtr(), connectionId, slotsCount);
 	}
 
 	public void CreateRoom(uint connectionId, uint slotsCount, uint jointSlot)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		NativeMethods.brbt_CreateRoomAndJoinSlot(m_client, connectionId, slotsCount, jointSlot);
+		NativeMethods.brbt_CreateRoomAndJoinSlot(GetClientPtr(), connectionId, slotsCount, jointSlot);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		NativeMethods.brbt_JoinRoom(m_client, connectionId, roomId);
+		NativeMethods.brbt_JoinRoom(GetClientPtr(), connectionId, roomId);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId, uint jointSlot)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		NativeMethods.brbt_JoinRoomAndSlot(m_client, connectionId, roomId, jointSlot);
+		NativeMethods.brbt_JoinRoomAndSlot(GetClientPtr(), connectionId, roomId, jointSlot);
 	}
 
 	public uint GetJoinedRoomId(uint connectionId)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		return NativeMethods.brbt_GetJoinedRoomId(m_client, connectionId);
+		return NativeMethods.brbt_GetJoinedRoomId(GetClientPtr(), connectionId);
 	}
 
 	public uint GetJoinedRoomSlot(uint connectionId)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		return NativeMethods.brbt_GetJoinedRoomSlot(m_client, connectionId);
+		return NativeMethods.brbt_GetJoinedRoomSlot(GetClientPtr(), connectionId);
 	}
 
 	public void SendToRoom(uint connectionId, byte[] data, uint numBytes, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		m_sendBuffer.Ensure(numBytes);
 		Marshal.Copy(data, 0, m_sendBuffer.ptr, (int) numBytes);
-		NativeMethods.brbt_SendToRoom(m_client, connectionId, m_sendBuffer.ptr, numBytes, mask);
+		NativeMethods.brbt_SendToRoom(GetClientPtr(), connectionId, m_sendBuffer.ptr, numBytes, mask);
 	}
 
 	public void SendToRoom(uint connectionId, byte[] data, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		SendToRoom(connectionId, data, (uint) data.Length, mask);
 	}
 
-	public Received PullReceived(string QueueName, ref string senderName)
+	public Received PullReceived()
 	{
-		GetClientPtr();
-		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
-		System.IntPtr ptr = NativeMethods.brbt_PullReceived(m_client);
-		if (ptr == System.IntPtr.Zero)
+		IntPtr ptr = NativeMethods.brbt_PullReceived(GetClientPtr());
+		if (ptr == IntPtr.Zero)
 			return null;
 
-		brbt_Received recv = new brbt_Received();
-		Marshal.PtrToStructure(ptr, recv);
-
+		brbt_Received recv = (brbt_Received) Marshal.PtrToStructure(ptr, typeof(brbt_Received));
 		Received result = new Received();
 		result.when = recv.when;
 		result.connection = recv.connection;
