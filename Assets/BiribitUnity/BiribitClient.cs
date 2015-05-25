@@ -356,11 +356,15 @@ public class BiribitClient
 		T[] array = new T[size];
 		if (ptrArray != IntPtr.Zero)
 		{
-			IntPtr ptrArrayIt = new IntPtr(ptrArray.ToInt64());
 			for (int i = 0; i < array.Length; i++)
 			{
-				array[i] = (T) Marshal.PtrToStructure(ptrArrayIt, typeof(T));
-				ptrArrayIt = Marshal.ReadIntPtr(new IntPtr(ptrArrayIt.ToInt64() + Marshal.SizeOf(typeof(T))));
+				IntPtr ptrArrayIt = new IntPtr(ptrArray.ToInt64() + i * Marshal.SizeOf(typeof(T)));
+				try {
+					array[i] = (T) Marshal.PtrToStructure(ptrArrayIt, typeof(T));
+				}
+				catch (Exception) {
+					return new T[0];
+				}
 			}
 		}
 		
@@ -434,7 +438,8 @@ public class BiribitClient
 
 	~BiribitClient()
 	{
-		if (m_client != 0) NativeMethods.brbt_DeleteClient(m_client);
+		if (m_client != 0)
+			NativeMethods.brbt_DeleteClient(m_client);
 	}
 
 	public void GetClientPtr()
@@ -449,49 +454,42 @@ public class BiribitClient
 	public void Connect(string address, ushort port = 0, string password = "")
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_Connect(m_client, address, port, password);
 	}
 
 	public void Disconnect(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_Disconnect(m_client, connectionId);
 	}
 
 	public void Disconnect()
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_DisconnectAll(m_client);
 	}
 
 	public void DiscoverOnLan(ushort port = 0)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_DiscoverOnLan(m_client, port);
 	}
 
 	public void ClearDiscoverInfo()
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_ClearDiscoverInfo(m_client);
 	}
 
 	public void RefreshDiscoverInfo()
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_RefreshDiscoverInfo(m_client);
 	}
 
 	public ServerInfo[] GetDiscoverInfo()
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		uint revision = 0;
 		brbt_ServerInfo_array array = NativeMethods.brbt_GetDiscoverInfo(m_client, ref revision);
 		return m_serverInfoArray.GetArray(revision, array.arr, array.size) ;
@@ -500,7 +498,6 @@ public class BiribitClient
 	public ServerConnection[] GetConnections()
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		uint revision = 0;
 		brbt_ServerConnection_array array = NativeMethods.brbt_GetConnections(m_client, ref revision);
 		return m_serverConnectionArray.GetArray(revision, array.arr, array.size);
@@ -509,7 +506,6 @@ public class BiribitClient
 	public RemoteClient[] GetRemoteClients(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		uint revision = 0;
 		brbt_RemoteClient_array array = NativeMethods.brbt_GetRemoteClients(m_client, connectionId, ref revision);
 		return m_remoteClientArray.GetArray(revision, array.arr, array.size);
@@ -518,14 +514,12 @@ public class BiribitClient
 	public uint GetLocalClientId(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		return NativeMethods.brbt_GetLocalClientId(m_client, connectionId);
 	}
 
 	public void SetLocalClientParameters(uint connectionId, string clientName, string appId = "")
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		brbt_ClientParameters parameters = new brbt_ClientParameters();
 		parameters.name = clientName;
 		parameters.appid = appId;
@@ -535,14 +529,12 @@ public class BiribitClient
 	public void RefreshRooms(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_RefreshRooms(m_client, connectionId);
 	}
 
 	public Room[] GetRooms(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		bool changed = false;
 		uint revision = 0;
 		brbt_Room_array array = NativeMethods.brbt_GetRooms(m_client, connectionId, ref revision);
@@ -569,49 +561,49 @@ public class BiribitClient
 	public void CreateRoom(uint connectionId, uint slotsCount)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_CreateRoom(m_client, connectionId, slotsCount);
 	}
 
 	public void CreateRoom(uint connectionId, uint slotsCount, uint jointSlot)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_CreateRoomAndJoinSlot(m_client, connectionId, slotsCount, jointSlot);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_JoinRoom(m_client, connectionId, roomId);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId, uint jointSlot)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		NativeMethods.brbt_JoinRoomAndSlot(m_client, connectionId, roomId, jointSlot);
 	}
 
 	public uint GetJoinedRoomId(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		return NativeMethods.brbt_GetJoinedRoomId(m_client, connectionId);
 	}
 
 	public uint GetJoinedRoomSlot(uint connectionId)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		return NativeMethods.brbt_GetJoinedRoomSlot(m_client, connectionId);
 	}
 
 	public void SendToRoom(uint connectionId, byte[] data, uint numBytes, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		m_sendBuffer.Ensure(numBytes);
 		Marshal.Copy(data, 0, m_sendBuffer.ptr, (int) numBytes);
 		NativeMethods.brbt_SendToRoom(m_client, connectionId, m_sendBuffer.ptr, numBytes, mask);
@@ -620,14 +612,14 @@ public class BiribitClient
 	public void SendToRoom(uint connectionId, byte[] data, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		SendToRoom(connectionId, data, (uint) data.Length, mask);
 	}
 
 	public Received PullReceived(string QueueName, ref string senderName)
 	{
 		GetClientPtr();
-		UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
+		//UnityEngine.Debug.Log(System.Reflection.MethodBase.GetCurrentMethod().Name);
 		System.IntPtr ptr = NativeMethods.brbt_PullReceived(m_client);
 		if (ptr == System.IntPtr.Zero)
 			return null;
