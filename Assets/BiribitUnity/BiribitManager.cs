@@ -75,6 +75,9 @@ public class BiribitManager : MonoBehaviour
 
 	private void OnApplicationQuit()
 	{
+		if (m_instance != null)
+			m_instance.FreeClientPtr();
+
 		NativeMethods.Clean();
 	}
 }

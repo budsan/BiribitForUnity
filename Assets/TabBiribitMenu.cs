@@ -47,6 +47,12 @@ public class TabBiribitMenu : Silver.UI.TabImmediate
 		{
 			ui.TitleField("Menu");
 			ui.LineSeparator();
+
+			if(ui.Button("Reload scene"))
+				Application.LoadLevel(Application.loadedLevel);
+
+			ui.Separator(1);
+			ui.LineSeparator();
 			if (ui.Button("Discover in LAN"))
 				client.DiscoverOnLan();
 
@@ -217,7 +223,7 @@ public class TabBiribitMenu : Silver.UI.TabImmediate
 					}
 
 					foreach(string linechat in chats) {
-						ui.LabelField(linechat);
+						ui.LabelField(linechat, 14);
 					}
 				}
 			}

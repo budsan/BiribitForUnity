@@ -179,6 +179,10 @@ public class BiribitClient
 		[DllImport(DllName, EntryPoint = "brbt_CreateClient")]
 		public static extern uint brbt_CreateClient();
 
+		/// Return Type: brbt_Client
+		[DllImport(DllName, EntryPoint = "brbt_GetClientInstance")]
+		public static extern uint brbt_GetClientInstance();
+
 
 		/// Return Type: void
 		///param0: brbt_Client
@@ -432,23 +436,18 @@ public class BiribitClient
 		public byte[] data;
 	}
 
-	public BiribitClient()
-	{
-
-	}
-
-	~BiribitClient()
-	{
-		if (m_client != 0)
-			NativeMethods.brbt_DeleteClient(m_client);
-	}
-
-	public uint GetClientPtr()
+	protected uint GetClientPtr()
 	{
 		if (m_client == 0)
-			m_client = NativeMethods.brbt_CreateClient();
+			m_client = NativeMethods.brbt_GetClientInstance();
 
 		return m_client;
+	}
+
+	public void FreeClientPtr()
+	{
+		if (m_client != 0)
+			NativeMethods.brbt_DeleteClient(GetClientPtr());
 	}
 
 	public void Connect(string address, ushort port = 0, string password = "")
