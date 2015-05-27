@@ -148,6 +148,10 @@ public class TabBiribitMenu : Silver.UI.TabImmediate
 				if (ui.Button("& Join"))
 					client.CreateRoom(connection.id, (uint)slots, (uint) jointSlot);
 				});
+
+				if (ui.Button("Random or create")) {
+					client.JoinRandomOrCreateRoom(connection.id, (uint)slots);
+				}
 				
 
 				BiribitClient.Room[] roomArray = client.GetRooms(connection.id);

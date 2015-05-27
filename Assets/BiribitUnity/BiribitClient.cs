@@ -303,6 +303,14 @@ public class BiribitClient
 		/// Return Type: void
 		///client: brbt_Client
 		///id_conn: brbt_id_t->unsigned int
+		///num_slots: unsigned int
+		[DllImport(DllName, EntryPoint = "brbt_JoinRandomOrCreateRoom")]
+		public static extern void brbt_JoinRandomOrCreateRoom(uint client, uint id_conn, uint num_slots);
+
+
+		/// Return Type: void
+		///client: brbt_Client
+		///id_conn: brbt_id_t->unsigned int
 		///room_id: brbt_id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_JoinRoom")]
 		public static extern void brbt_JoinRoom(uint client, uint id_conn, uint room_id);
@@ -567,6 +575,11 @@ public class BiribitClient
 	public void CreateRoom(uint connectionId, uint slotsCount, uint jointSlot)
 	{
 		NativeMethods.brbt_CreateRoomAndJoinSlot(GetClientPtr(), connectionId, slotsCount, jointSlot);
+	}
+
+	public void JoinRandomOrCreateRoom(uint connectionId, uint slotsCount)
+	{
+		NativeMethods.brbt_JoinRandomOrCreateRoom(GetClientPtr(), connectionId, slotsCount);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId)
