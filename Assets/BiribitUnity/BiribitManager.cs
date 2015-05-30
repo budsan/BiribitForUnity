@@ -95,6 +95,19 @@ public class BiribitManager : MonoBehaviour
 		return 0;
 	}
 
+	BiribitClient.RemoteClient[] m_remoteClients;
+	public string GetPlayerName(uint id)
+	{
+		if (HasJoinedRoom())
+		{
+			uint client_id = m_joinedRoom.slots[id];
+			int arrayPos = Biribit.Instance.GetRemoteClientArrayPos(client_id);
+			return m_remoteClients[arrayPos].name;
+		}
+
+		return "InvalidClient";
+	}
+
 	public void AddBehaviour(BiribitBehaviour behaviour)
 	{
 		List<BiribitBehaviour> behaviours;
@@ -159,7 +172,7 @@ public class BiribitManager : MonoBehaviour
 			listener.Disconnected();
 	}
 
-	private Dictionary<uint, List<BiribitBehaviour>> m_behaviours = new Dictionary<uint,List<BiribitBehaviour>>();
+	private Dictionary<uint, List<BiribitBehaviour>> m_behaviours = new Dictionary<uint, List<BiribitBehaviour>>();
 	private void FixedUpdate()
 	{
 		BiribitClient client = Biribit.Instance;
@@ -175,22 +188,26 @@ public class BiribitManager : MonoBehaviour
 		if (m_connected)
 		{
 			m_connectionId = connections[0].id;
+			m_remoteClients = client.GetRemoteClients(m_connectionId);
 			BiribitClient.Room[] rooms = client.GetRooms(m_connectionId);
-			
+
 			uint joinedRoom = client.GetJoinedRoomId(m_connectionId);
 			uint roomPos = 0;
-			for (; roomPos < rooms.Length && rooms[roomPos].id != joinedRoom; roomPos++);
+			for (; roomPos < rooms.Length && rooms[roomPos].id != joinedRoom; roomPos++) ;
 			m_joined = roomPos < rooms.Length;
 			if (m_joined)
 			{
 				BiribitClient.Room room = rooms[roomPos];
+				BiribitClient.Room lastRoom = m_joinedRoom;
+				m_joinedRoom = room;
+
 				m_localPlayer = client.GetJoinedRoomSlot(m_connectionId);
-				for (uint i = 0; i < room.slots.Length; i++ )
+				for (uint i = 0; i < room.slots.Length; i++)
 				{
 					uint nowslot = room.slots[i];
 					uint beforeslot = BiribitClient.UnassignedId;
-					if (i < m_joinedRoom.slots.Length)
-						beforeslot = m_joinedRoom.slots[i];
+					if (i < lastRoom.slots.Length)
+						beforeslot = lastRoom.slots[i];
 
 					if (beforeslot != nowslot)
 					{
@@ -202,7 +219,6 @@ public class BiribitManager : MonoBehaviour
 					}
 				}
 
-				m_joinedRoom = room;
 				BiribitClient.Received recv = client.PullReceived();
 				while ((recv = client.PullReceived()) != null)
 				{
