@@ -26,7 +26,7 @@ public class TabBiribitMenu : Silver.UI.TabImmediate
 
 	public override void DrawUI()
 	{
-		BiribitClient client = BiribitManager.Instance;
+		BiribitClient client = Biribit.Instance;
 		BiribitClient.Received recv;
 		while ((recv = client.PullReceived()) != null)
 		{

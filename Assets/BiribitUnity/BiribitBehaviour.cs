@@ -13,7 +13,7 @@ public class BiribitBehaviour : MonoBehaviour
 
 	public virtual void Start()
 	{
-		manager = BiribitManager.ManagerInstance;
+		manager = BiribitManager.Instance;
 		manager.AddBehaviour(this);
 	}
 
