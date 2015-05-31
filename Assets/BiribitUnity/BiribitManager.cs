@@ -42,7 +42,7 @@ public class BiribitManager : MonoBehaviour
 			if (m_instance == null)
 			{
 				GameObject manager = new GameObject("BiribitManager");
-				manager.AddComponent<BiribitManager>();
+				m_instance = manager.AddComponent<BiribitManager>();
 			}
 
 			return m_instance;
@@ -53,6 +53,11 @@ public class BiribitManager : MonoBehaviour
 	{
 		m_joinedRoom.id = BiribitClient.UnassignedId;
 		m_joinedRoom.slots = new uint[0];
+
+		if (m_instance == null)
+			m_instance = this;
+		else if (m_instance != this)
+			Destroy(this);
 	}
 
 	private void Start()
