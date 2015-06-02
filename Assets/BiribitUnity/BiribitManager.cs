@@ -139,7 +139,7 @@ public class BiribitManager : MonoBehaviour
 	public void Send(byte[] data, BiribitClient.ReliabilityBitmask mask = BiribitClient.ReliabilityBitmask.Unreliable)
 	{
 		if (m_connectionId != BiribitClient.UnassignedId)
-			Biribit.Instance.SendToRoom(m_connectionId, data, mask);
+			Biribit.Instance.SendBroadcast(m_connectionId, data, mask);
 	}
 
 	List<BiribitListener> m_listeners = new List<BiribitListener>();

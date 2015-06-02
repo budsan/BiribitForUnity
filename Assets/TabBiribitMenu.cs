@@ -222,7 +222,7 @@ public class TabBiribitMenu : Silver.UI.TabImmediate
 					if(ui.Button("Send") && !string.IsNullOrEmpty(chat.Trim()))
 					{
 						byte[] data = Encoding.ASCII.GetBytes(chat.Trim());
-						client.SendToRoom(connection.id, data);
+						client.SendBroadcast(connection.id, data);
 						chat = "";
 					}
 

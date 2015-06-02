@@ -7,21 +7,29 @@ using System.Runtime.InteropServices;
 public class BiribitClient
 {
 	public const uint UnassignedId = 0; 
-
+	
 	public enum ReliabilityBitmask
 	{
 
-		/// brbt_Unreliable -> 0
+		/// Unreliable -> 0
 		Unreliable = 0,
 
-		/// brbt_Reliable -> 1
+		/// Reliable -> 1
 		Reliable = 1,
 
-		/// brbt_Ordered -> 2
+		/// Ordered -> 2
 		Ordered = 2,
 
-		/// brbt_ReliableOrdered -> 3
+		/// ReliableOrdered -> 3
 		ReliableOrdered = 3,
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Client
+	{
+
+		/// void*
+		public IntPtr ptr;
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -47,10 +55,10 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_ServerInfo_array
+	public struct ServerInfoArray
 	{
 
-		/// brbt_ServerInfo*
+		/// ServerInfo*
 		public IntPtr arr;
 
 		/// unsigned int
@@ -61,7 +69,7 @@ public class BiribitClient
 	public struct ServerConnection
 	{
 
-		/// brbt_id_t->unsigned int
+		/// id_t->unsigned int
 		public uint id;
 
 		/// char*
@@ -73,10 +81,10 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_ServerConnection_array
+	public struct ServerConnectionArray
 	{
 
-		/// brbt_ServerConnection*
+		/// ServerConnection*
 		public IntPtr arr;
 
 		/// unsigned int
@@ -87,7 +95,7 @@ public class BiribitClient
 	public struct RemoteClient
 	{
 
-		/// brbt_id_t->unsigned int
+		/// id_t->unsigned int
 		public uint id;
 
 		/// char*
@@ -100,10 +108,10 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_RemoteClient_array
+	public struct RemoteClientArray
 	{
 
-		/// brbt_RemoteClient*
+		/// RemoteClient*
 		public IntPtr arr;
 
 		/// unsigned int
@@ -111,7 +119,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_ClientParameters
+	public struct ClientParameters
 	{
 
 		/// char*
@@ -124,24 +132,24 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_Room
+	public struct NativeRoom
 	{
 
-		/// brbt_id_t->unsigned int
+		/// id_t->unsigned int
 		public uint id;
 
 		/// unsigned int
 		public uint slots_size;
 
-		/// brbt_id_t*
+		/// id_t*
 		public IntPtr slots;
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_Room_array
+	public struct RoomArray
 	{
 
-		/// brbt_Room*
+		/// NativeRoom*
 		public IntPtr arr;
 
 		/// unsigned int
@@ -149,16 +157,16 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	protected struct brbt_Received
+	public struct NativeReceived
 	{
 
-		/// brbt_time_t->unsigned int
+		/// time_t->unsigned int
 		public uint when;
 
-		/// brbt_id_t->unsigned int
+		/// id_t->unsigned int
 		public uint connection;
 
-		/// brbt_id_t->unsigned int
+		/// id_t->unsigned int
 		public uint room_id;
 
 		/// unsigned char
@@ -171,195 +179,239 @@ public class BiribitClient
 		public IntPtr data;
 	}
 
-	protected partial class NativeMethods
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Entry
 	{
-		const string DllName = "BiribitForUnity";
 
-		/// Return Type: brbt_Client
+		/// id_t->unsigned int
+		public uint id;
+
+		/// unsigned char
+		public byte slot_id;
+
+		/// unsigned int
+		public uint data_size;
+
+		/// void*
+		public IntPtr data;
+	}
+
+	public partial class NativeMethods
+	{
+		private const string DllName = "BiribitForUnity";
+
+		/// Return Type: Client
 		[DllImport(DllName, EntryPoint = "brbt_CreateClient")]
-		public static extern uint brbt_CreateClient();
+		public static extern Client CreateClient();
 
-		/// Return Type: brbt_Client
+
+		/// Return Type: Client
 		[DllImport(DllName, EntryPoint = "brbt_GetClientInstance")]
-		public static extern uint brbt_GetClientInstance();
+		public static extern Client GetClientInstance();
 
 
 		/// Return Type: void
-		///param0: brbt_Client
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_DeleteClient")]
-		public static extern void brbt_DeleteClient(uint client);
+		public static extern void DeleteClient(Client client);
 
 
 		/// Return Type: void
-		///client: brbt_Client
+		///client: Client
 		///addr: char*
 		///port: unsigned short
 		///password: char*
 		[DllImport(DllName, EntryPoint = "brbt_Connect")]
-		public static extern void brbt_Connect(uint client, [InAttribute()] [MarshalAs(UnmanagedType.LPStr)] string addr, ushort port, [InAttribute()] [MarshalAs(UnmanagedType.LPStr)] string password);
+		public static extern void Connect(Client client, [InAttribute()] [MarshalAs(UnmanagedType.LPStr)] string addr, ushort port, [InAttribute()] [MarshalAs(UnmanagedType.LPStr)] string password);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_con: brbt_id_t->unsigned int
+		///client: Client
+		///id_con: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_Disconnect")]
-		public static extern void brbt_Disconnect(uint client, uint id_con);
+		public static extern void Disconnect(Client client, uint id_con);
 
 
 		/// Return Type: void
-		///client: brbt_Client
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_DisconnectAll")]
-		public static extern void brbt_DisconnectAll(uint client);
+		public static extern void DisconnectAll(Client client);
 
 
 		/// Return Type: void
-		///client: brbt_Client
+		///client: Client
 		///port: unsigned short
 		[DllImport(DllName, EntryPoint = "brbt_DiscoverOnLan")]
-		public static extern void brbt_DiscoverOnLan(uint client, ushort port);
+		public static extern void DiscoverOnLan(Client client, ushort port);
 
 
 		/// Return Type: void
-		///client: brbt_Client
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_ClearDiscoverInfo")]
-		public static extern void brbt_ClearDiscoverInfo(uint client);
+		public static extern void ClearDiscoverInfo(Client client);
 
 
 		/// Return Type: void
-		///client: brbt_Client
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_RefreshDiscoverInfo")]
-		public static extern void brbt_RefreshDiscoverInfo(uint client);
+		public static extern void RefreshDiscoverInfo(Client client);
 
 
-		/// Return Type: brbt_ServerInfo_array
-		///client: brbt_Client
+		/// Return Type: ServerInfoArray
+		///client: Client
 		///revision: unsigned int*
 		[DllImport(DllName, EntryPoint = "brbt_GetDiscoverInfo")]
-		public static extern brbt_ServerInfo_array brbt_GetDiscoverInfo(uint client, ref uint revision);
+		public static extern ServerInfoArray GetDiscoverInfo(Client client, ref uint revision);
 
 
-		/// Return Type: brbt_ServerConnection_array
-		///client: brbt_Client
+		/// Return Type: ServerConnectionArray
+		///client: Client
 		///revision: unsigned int*
 		[DllImport(DllName, EntryPoint = "brbt_GetConnections")]
-		public static extern brbt_ServerConnection_array brbt_GetConnections(uint client, ref uint revision);
+		public static extern ServerConnectionArray GetConnections(Client client, ref uint revision);
 
 
-		/// Return Type: brbt_RemoteClient_array
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		/// Return Type: RemoteClientArray
+		///client: Client
+		///id_conn: id_t->unsigned int
 		///revision: unsigned int*
 		[DllImport(DllName, EntryPoint = "brbt_GetRemoteClients")]
-		public static extern brbt_RemoteClient_array brbt_GetRemoteClients(uint client, uint id_conn, ref uint revision);
+		public static extern RemoteClientArray GetRemoteClients(Client client, uint id_conn, ref uint revision);
 
 
-		/// Return Type: brbt_id_t->unsigned int
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		/// Return Type: id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_GetLocalClientId")]
-		public static extern uint brbt_GetLocalClientId(uint client, uint id_conn);
+		public static extern uint GetLocalClientId(Client client, uint id_conn);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
-		///parameters: brbt_ClientParameters
+		///client: Client
+		///id_conn: id_t->unsigned int
+		///parameters: ClientParameters
 		[DllImport(DllName, EntryPoint = "brbt_SetLocalClientParameters")]
-		public static extern void brbt_SetLocalClientParameters(uint client, uint id_conn, brbt_ClientParameters parameters);
+		public static extern void SetLocalClientParameters(Client client, uint id_conn, ClientParameters parameters);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_RefreshRooms")]
-		public static extern void brbt_RefreshRooms(uint client, uint id_conn);
+		public static extern void RefreshRooms(Client client, uint id_conn);
 
 
-		/// Return Type: brbt_Room_array
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		/// Return Type: RoomArray
+		///client: Client
+		///id_conn: id_t->unsigned int
 		///revision: unsigned int*
 		[DllImport(DllName, EntryPoint = "brbt_GetRooms")]
-		public static extern brbt_Room_array brbt_GetRooms(uint client, uint id_conn, ref uint revision);
+		public static extern RoomArray GetRooms(Client client, uint id_conn, ref uint revision);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		///num_slots: unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_CreateRoom")]
-		public static extern void brbt_CreateRoom(uint client, uint id_conn, uint num_slots);
+		public static extern void CreateRoom(Client client, uint id_conn, uint num_slots);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		///num_slots: unsigned int
 		///slot_to_join_id: unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_CreateRoomAndJoinSlot")]
-		public static extern void brbt_CreateRoomAndJoinSlot(uint client, uint id_conn, uint num_slots, uint slot_to_join_id);
+		public static extern void CreateRoomAndJoinSlot(Client client, uint id_conn, uint num_slots, uint slot_to_join_id);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		///num_slots: unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_JoinRandomOrCreateRoom")]
-		public static extern void brbt_JoinRandomOrCreateRoom(uint client, uint id_conn, uint num_slots);
+		public static extern void JoinRandomOrCreateRoom(Client client, uint id_conn, uint num_slots);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
-		///room_id: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
+		///room_id: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_JoinRoom")]
-		public static extern void brbt_JoinRoom(uint client, uint id_conn, uint room_id);
+		public static extern void JoinRoom(Client client, uint id_conn, uint room_id);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
-		///room_id: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
+		///room_id: id_t->unsigned int
 		///slot_id: unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_JoinRoomAndSlot")]
-		public static extern void brbt_JoinRoomAndSlot(uint client, uint id_conn, uint room_id, uint slot_id);
+		public static extern void JoinRoomAndSlot(Client client, uint id_conn, uint room_id, uint slot_id);
 
 
-		/// Return Type: brbt_id_t->unsigned int
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		/// Return Type: id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_GetJoinedRoomId")]
-		public static extern uint brbt_GetJoinedRoomId(uint client, uint id_conn);
+		public static extern uint GetJoinedRoomId(Client client, uint id_conn);
 
 
 		/// Return Type: unsigned int
-		///client: brbt_Client
-		///id_conn: brbt_id_t->unsigned int
+		///client: Client
+		///id_conn: id_t->unsigned int
 		[DllImport(DllName, EntryPoint = "brbt_GetJoinedRoomSlot")]
-		public static extern uint brbt_GetJoinedRoomSlot(uint client, uint id_conn);
+		public static extern uint GetJoinedRoomSlot(Client client, uint id_conn);
 
 
 		/// Return Type: void
-		///client: brbt_Client
-		///id_con: brbt_id_t->unsigned int
+		///client: Client
+		///id_con: id_t->unsigned int
 		///data: void*
 		///size: unsigned int
-		///mask: brbt_ReliabilityBitmask
-		[DllImport(DllName, EntryPoint = "brbt_SendToRoom")]
-		public static extern void brbt_SendToRoom(uint client, uint id_con, IntPtr data, uint size, ReliabilityBitmask mask);
+		///mask: ReliabilityBitmask
+		[DllImport(DllName, EntryPoint = "brbt_SendBroadcast")]
+		public static extern void SendBroadcast(Client client, uint id_con, IntPtr data, uint size, ReliabilityBitmask mask);
+
+
+		/// Return Type: void
+		///client: Client
+		///id_con: id_t->unsigned int
+		///data: void*
+		///size: unsigned int
+		[DllImport(DllName, EntryPoint = "brbt_SendEntry")]
+		public static extern void SendEntry(Client client, uint id_con, IntPtr data, uint size);
 
 
 		/// Return Type: unsigned int
-		///client: brbt_Client
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_GetDataSizeOfNextReceived")]
-		public static extern uint brbt_GetDataSizeOfNextReceived(uint client);
+		public static extern uint GetDataSizeOfNextReceived(Client client);
 
 
-		/// Return Type: brbt_Received*
-		///client: brbt_Client
+		/// Return Type: Received*
+		///client: Client
 		[DllImport(DllName, EntryPoint = "brbt_PullReceived")]
-		public static extern IntPtr brbt_PullReceived(uint client);
+		public static extern IntPtr PullReceived(Client client);
+
+
+		/// Return Type: id_t->unsigned int
+		///client: Client
+		///id_con: id_t->unsigned int
+		[DllImport(DllName, EntryPoint = "brbt_GetEntriesCount")]
+		public static extern uint GetEntriesCount(Client client, uint id_con);
+
+
+		/// Return Type: Entry*
+		///client: Client
+		///id_con: id_t->unsigned int
+		///id_entry: id_t->unsigned int
+		[DllImport(DllName, EntryPoint = "brbt_GetEntry")]
+		public static extern IntPtr GetEntry(Client client, uint id_con, uint id_entry);
+
 	}
+
 
 	//-----------------------------------------------------------------------//
 
@@ -418,18 +470,20 @@ public class BiribitClient
 
 	//-----------------------------------------------------------------------//
 
-	private uint m_client;
+	private Client m_client;
 	private ArrayHolder<ServerInfo> m_serverInfoArray = new ArrayHolder<ServerInfo>();
 	private ArrayHolder<ServerConnection> m_serverConnectionArray = new ArrayHolder<ServerConnection>();
 	private ArrayHolder<RemoteClient> m_remoteClientArray = new ArrayHolder<RemoteClient>();
-	private ArrayHolder<brbt_Room> m_roomArray = new ArrayHolder<brbt_Room>();
-	private Room[] m_rooms = new Room[0];
+	private ArrayHolder<NativeRoom> m_roomArray = new ArrayHolder<NativeRoom>();
+
+	//-----------------------------------------------------------------------//
+
 	private NativeBuffer m_sendBuffer = new NativeBuffer();
 	private Dictionary<uint, int> m_remoteClientById = new Dictionary<uint, int>();
 
 	//-----------------------------------------------------------------------//
 
-	public struct Room
+	public class Room
 	{
 		public uint id;
 		public uint[] slots;
@@ -444,61 +498,71 @@ public class BiribitClient
 		public byte[] data;
 	}
 
-	protected uint GetClientPtr()
+	private Room[] m_rooms = new Room[0];
+
+	//-----------------------------------------------------------------------//
+
+	public BiribitClient()
 	{
-		if (m_client == 0)
-			m_client = NativeMethods.brbt_GetClientInstance();
+		m_client = new Client();
+		m_client.ptr = IntPtr.Zero;
+	}
+
+	protected Client GetClientPtr()
+	{
+		if (m_client.ptr == IntPtr.Zero)
+			m_client = NativeMethods.GetClientInstance();
 
 		return m_client;
 	}
 
 	public void FreeClientPtr()
 	{
-		if (m_client != 0)
-			NativeMethods.brbt_DeleteClient(GetClientPtr());
+		if (m_client.ptr != IntPtr.Zero)
+			NativeMethods.DeleteClient(GetClientPtr());
 	}
 
 	public void Connect(string address, ushort port = 0, string password = "")
 	{
-		NativeMethods.brbt_Connect(GetClientPtr(), address, port, password);
+		NativeMethods.Connect(GetClientPtr(), address, port, password);
 	}
 
 	public void Disconnect(uint connectionId)
 	{
-		NativeMethods.brbt_Disconnect(GetClientPtr(), connectionId);
+		NativeMethods.Disconnect(GetClientPtr(), connectionId);
 	}
 
 	public void Disconnect()
 	{
-		NativeMethods.brbt_DisconnectAll(GetClientPtr());
+		NativeMethods.DisconnectAll(GetClientPtr());
 	}
 
 	public void DiscoverOnLan(ushort port = 0)
 	{
-		NativeMethods.brbt_DiscoverOnLan(GetClientPtr(), port);
+		NativeMethods.DiscoverOnLan(GetClientPtr(), port);
 	}
 
 	public void ClearDiscoverInfo()
 	{
-		NativeMethods.brbt_ClearDiscoverInfo(GetClientPtr());
+		NativeMethods.ClearDiscoverInfo(GetClientPtr());
 	}
 
 	public void RefreshDiscoverInfo()
 	{
-		NativeMethods.brbt_RefreshDiscoverInfo(GetClientPtr());
+		NativeMethods.RefreshDiscoverInfo(GetClientPtr());
 	}
 
 	public ServerInfo[] GetDiscoverInfo()
 	{
 		uint revision = 0;
-		brbt_ServerInfo_array array = NativeMethods.brbt_GetDiscoverInfo(GetClientPtr(), ref revision);
+		ServerInfoArray array = NativeMethods.GetDiscoverInfo(GetClientPtr(), ref revision);
 		return m_serverInfoArray.GetArray(revision, array.arr, array.size) ;
 	}
 
 	public ServerConnection[] GetConnections()
 	{
 		uint revision = 0;
-		brbt_ServerConnection_array array = NativeMethods.brbt_GetConnections(GetClientPtr(), ref revision);
+		ServerConnectionArray array = NativeMethods.GetConnections(GetClientPtr(), ref revision);
 		return m_serverConnectionArray.GetArray(revision, array.arr, array.size);
 	}
 
@@ -506,7 +570,7 @@ public class BiribitClient
 	{
 		bool changed = false;
 		uint revision = 0;
-		brbt_RemoteClient_array array = NativeMethods.brbt_GetRemoteClients(GetClientPtr(), connectionId, ref revision);
+		RemoteClientArray array = NativeMethods.GetRemoteClients(GetClientPtr(), connectionId, ref revision);
 		RemoteClient[] remoteClient = m_remoteClientArray.GetArray(revision, array.arr, array.size, out changed);
 		if (changed)
 		{
@@ -526,28 +590,28 @@ public class BiribitClient
 
 	public uint GetLocalClientId(uint connectionId)
 	{
-		return NativeMethods.brbt_GetLocalClientId(GetClientPtr(), connectionId);
+		return NativeMethods.GetLocalClientId(GetClientPtr(), connectionId);
 	}
 
 	public void SetLocalClientParameters(uint connectionId, string clientName, string appId = "")
 	{
-		brbt_ClientParameters parameters = new brbt_ClientParameters();
+		ClientParameters parameters = new ClientParameters();
 		parameters.name = clientName;
 		parameters.appid = appId;
-		NativeMethods.brbt_SetLocalClientParameters(GetClientPtr(), connectionId, parameters);
+		NativeMethods.SetLocalClientParameters(GetClientPtr(), connectionId, parameters);
 	}
 
 	public void RefreshRooms(uint connectionId)
 	{
-		NativeMethods.brbt_RefreshRooms(GetClientPtr(), connectionId);
+		NativeMethods.RefreshRooms(GetClientPtr(), connectionId);
 	}
 
 	public Room[] GetRooms(uint connectionId)
 	{
 		bool changed = false;
 		uint revision = 0;
-		brbt_Room_array array = NativeMethods.brbt_GetRooms(GetClientPtr(), connectionId, ref revision);
-		brbt_Room[] rooms = m_roomArray.GetArray(revision, array.arr, array.size, out changed);
+		RoomArray array = NativeMethods.GetRooms(GetClientPtr(), connectionId, ref revision);
+		NativeRoom[] rooms = m_roomArray.GetArray(revision, array.arr, array.size, out changed);
 		if (changed)
 		{
 			m_rooms = new Room[rooms.Length];
@@ -569,58 +633,58 @@ public class BiribitClient
 
 	public void CreateRoom(uint connectionId, uint slotsCount)
 	{
-		NativeMethods.brbt_CreateRoom(GetClientPtr(), connectionId, slotsCount);
+		NativeMethods.CreateRoom(GetClientPtr(), connectionId, slotsCount);
 	}
 
 	public void CreateRoom(uint connectionId, uint slotsCount, uint jointSlot)
 	{
-		NativeMethods.brbt_CreateRoomAndJoinSlot(GetClientPtr(), connectionId, slotsCount, jointSlot);
+		NativeMethods.CreateRoomAndJoinSlot(GetClientPtr(), connectionId, slotsCount, jointSlot);
 	}
 
 	public void JoinRandomOrCreateRoom(uint connectionId, uint slotsCount)
 	{
-		NativeMethods.brbt_JoinRandomOrCreateRoom(GetClientPtr(), connectionId, slotsCount);
+		NativeMethods.JoinRandomOrCreateRoom(GetClientPtr(), connectionId, slotsCount);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId)
 	{
-		NativeMethods.brbt_JoinRoom(GetClientPtr(), connectionId, roomId);
+		NativeMethods.JoinRoom(GetClientPtr(), connectionId, roomId);
 	}
 
 	public void JoinRoom(uint connectionId, uint roomId, uint jointSlot)
 	{
-		NativeMethods.brbt_JoinRoomAndSlot(GetClientPtr(), connectionId, roomId, jointSlot);
+		NativeMethods.JoinRoomAndSlot(GetClientPtr(), connectionId, roomId, jointSlot);
 	}
 
 	public uint GetJoinedRoomId(uint connectionId)
 	{
-		return NativeMethods.brbt_GetJoinedRoomId(GetClientPtr(), connectionId);
+		return NativeMethods.GetJoinedRoomId(GetClientPtr(), connectionId);
 	}
 
 	public uint GetJoinedRoomSlot(uint connectionId)
 	{
-		return NativeMethods.brbt_GetJoinedRoomSlot(GetClientPtr(), connectionId);
+		return NativeMethods.GetJoinedRoomSlot(GetClientPtr(), connectionId);
 	}
 
-	public void SendToRoom(uint connectionId, byte[] data, uint numBytes, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
+	public void SendBroadcast(uint connectionId, byte[] data, uint numBytes, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
 		m_sendBuffer.Ensure(numBytes);
 		Marshal.Copy(data, 0, m_sendBuffer.ptr, (int) numBytes);
-		NativeMethods.brbt_SendToRoom(GetClientPtr(), connectionId, m_sendBuffer.ptr, numBytes, mask);
+		NativeMethods.SendBroadcast(GetClientPtr(), connectionId, m_sendBuffer.ptr, numBytes, mask);
 	}
 
-	public void SendToRoom(uint connectionId, byte[] data, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
+	public void SendBroadcast(uint connectionId, byte[] data, ReliabilityBitmask mask = ReliabilityBitmask.Unreliable)
 	{
-		SendToRoom(connectionId, data, (uint) data.Length, mask);
+		SendBroadcast(connectionId, data, (uint) data.Length, mask);
 	}
 
 	public Received PullReceived()
 	{
-		IntPtr ptr = NativeMethods.brbt_PullReceived(GetClientPtr());
+		IntPtr ptr = NativeMethods.PullReceived(GetClientPtr());
 		if (ptr == IntPtr.Zero)
 			return null;
 
-		brbt_Received recv = (brbt_Received) Marshal.PtrToStructure(ptr, typeof(brbt_Received));
+		NativeReceived recv = (NativeReceived) Marshal.PtrToStructure(ptr, typeof(NativeReceived));
 		Received result = new Received();
 		result.when = recv.when;
 		result.connection = recv.connection;
