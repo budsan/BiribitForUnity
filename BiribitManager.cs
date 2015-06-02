@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
-using Silver;
 
 public class BiribitManager : MonoBehaviour
 {
