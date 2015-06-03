@@ -47,7 +47,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct ServerInfoArray
+	protected struct ServerInfoArray
 	{
 
 		/// ServerInfo*
@@ -73,7 +73,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct ServerConnectionArray
+	protected struct ServerConnectionArray
 	{
 
 		/// ServerConnection*
@@ -100,7 +100,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct RemoteClientArray
+	protected struct RemoteClientArray
 	{
 
 		/// RemoteClient*
@@ -111,7 +111,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct ClientParameters
+	protected struct ClientParameters
 	{
 
 		/// char*
@@ -124,7 +124,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct NativeRoom
+	protected struct NativeRoom
 	{
 
 		/// id_t->unsigned int
@@ -138,7 +138,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct RoomArray
+	protected struct RoomArray
 	{
 
 		/// NativeRoom*
@@ -149,7 +149,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct NativeReceived
+	protected struct NativeReceived
 	{
 
 		/// time_t->unsigned int
@@ -172,7 +172,7 @@ public class BiribitClient
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Entry
+	protected struct NativeEntry
 	{
 
 		/// id_t->unsigned int
@@ -188,7 +188,7 @@ public class BiribitClient
 		public IntPtr data;
 	}
 
-	public partial class NativeMethods
+	protected partial class NativeMethods
 	{
 		private const string DllName = "BiribitForUnity";
 
@@ -492,6 +492,13 @@ public class BiribitClient
 		public byte[] data;
 	}
 
+	public struct Entry
+	{
+		public uint id;
+		public byte slot_id;
+		public byte[] data;
+	}
+
 	private Room[] m_rooms = new Room[0];
 
 	//-----------------------------------------------------------------------//
@@ -672,6 +679,19 @@ public class BiribitClient
 		SendBroadcast(connectionId, data, (uint) data.Length, mask);
 	}
 
+	public void SendEntry(uint connectionId, byte[] data, uint numBytes)
+	{
+		m_sendBuffer.Ensure(numBytes);
+		Marshal.Copy(data, 0, m_sendBuffer.ptr, (int)numBytes);
+		NativeMethods.SendEntry(GetClientPtr(), connectionId, m_sendBuffer.ptr, numBytes);
+	}
+
+	public void SendEntry(uint connectionId, byte[] data)
+	{
+		SendEntry(connectionId, data, (uint)data.Length);
+	}
+
+
 	public Received PullReceived()
 	{
 		IntPtr ptr = NativeMethods.PullReceived(GetClientPtr());
@@ -688,6 +708,26 @@ public class BiribitClient
 
 		if (recv.data_size > 0)
 			Marshal.Copy(recv.data, result.data, 0, (int) recv.data_size);
+
+		return result;
+	}
+
+	public uint GetEntriesCount(uint connectionId)
+	{
+		return NativeMethods.GetEntriesCount(GetClientPtr(), connectionId);
+	}
+
+	public Entry GetEntry(uint connectionId, uint entryId)
+	{
+		IntPtr ptr = NativeMethods.GetEntry(GetClientPtr(), connectionId, entryId);
+		NativeEntry entry = (NativeEntry)Marshal.PtrToStructure(ptr, typeof(NativeEntry));
+		Entry result = new Entry();
+		result.id = entry.id;
+		result.slot_id = entry.slot_id;
+		result.data = new byte[entry.data_size];
+
+		if (entry.data_size > 0)
+			Marshal.Copy(entry.data, result.data, 0, (int) entry.data_size);
 
 		return result;
 	}
