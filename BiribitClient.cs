@@ -625,7 +625,10 @@ public class BiribitClient
 				m_rooms[i].id = rooms[i].id;
 				m_rooms[i].slots = new uint[temp.Length];
 				for (int j = 0; j < temp.Length; j++)
-					m_rooms[i].slots[j] = (uint)temp[j];
+				{
+					// Save the existing bit pattern, but interpret it as an unsigned integer.
+					m_rooms[i].slots[j] = BitConverter.ToUInt32(BitConverter.GetBytes(temp[j]), 0);
+				}	
 			}
 		}
 
