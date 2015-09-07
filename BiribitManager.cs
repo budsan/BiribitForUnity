@@ -170,6 +170,7 @@ public class BiribitManager : MonoBehaviour
 	{
 		if (m_instance == null)
 		{
+			DontDestroyOnLoad(transform.gameObject);
 			m_instance = this;
 			NativeMethods.Clean();
 
