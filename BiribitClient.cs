@@ -678,15 +678,7 @@ namespace Biribit
 				for (int i = 0; i < array.Length; i++)
 				{
 					IntPtr ptrArrayIt = new IntPtr(ptrArray.ToInt64() + i * Marshal.SizeOf(typeof(T)));
-					try
-					{
-						array[i] = (T)Marshal.PtrToStructure(ptrArrayIt, typeof(T));
-					}
-					catch (Exception ex)
-					{
-						UnityEngine.Debug.Log("EX:" + ex.Message + "\n" + ex.StackTrace);
-						return new T[0];
-					}
+					array[i] = (T)Marshal.PtrToStructure(ptrArrayIt, typeof(T));
 				}
 			}
 
@@ -778,7 +770,7 @@ namespace Biribit
 		private HandleRef m_client;
 		private NativeBuffer m_sendBuffer = new NativeBuffer();
 		private Native.EventCallbackTable m_table;
-		private List<ClientListener> m_listeners = new List<ClientListener>();
+		private HashSet<ClientListener> m_listeners = new HashSet<ClientListener>();
 
 		//-----------------------------------------------------------------------//
 
@@ -799,16 +791,12 @@ namespace Biribit
 
 		public void AddListener(ClientListener listener)
 		{
-			int index = m_listeners.BinarySearch(listener);
-			if (index < 0)
-				m_listeners.Insert(~index, listener);
+			m_listeners.Add(listener);
 		}
 
 		public void DelListener(ClientListener listener)
 		{
-			int index = m_listeners.BinarySearch(listener);
-			if (index >= 0)
-				m_listeners.Insert(index, listener);
+			m_listeners.Remove(listener);
 		}
 
 		protected HandleRef GetClientPtr()
@@ -886,6 +874,12 @@ namespace Biribit
 		{
 			Native.NativeMethods.PullEvents(GetClientPtr(), ref m_table);
 			Native.NativeMethods.UpdateCallbacks(GetClientPtr());
+
+			if (m_ex != null) {
+				Exception ex = m_ex;
+				m_ex = null;
+				throw ex;
+			}
 		}
 
 		public uint GetLocalClientId(uint connectionId)
@@ -978,8 +972,10 @@ namespace Biribit
 
 		//-------------------------------------------------------------------//
 
+		private Exception m_ex = null;
 		private void PrintException(Exception ex) {
-			UnityEngine.Debug.LogError(ex.GetType().Name + "\n" + ex.Message + "\n" + ex.StackTrace);
+			if (m_ex != null)
+				m_ex = ex;
 		}
 
 		private void OnGetServerInfo(Native.ServerInfo_array array)
