@@ -47,7 +47,36 @@ public class BiribitManager : MonoBehaviour
 
 				remoteClientsById[(int) id] = i;
 			}
-				
+		}
+
+		public int GetRemoteClientPos(uint id)
+		{
+			int pos = -1;
+			for (int i = 0; i < rooms.Length; i++)
+			{
+				if (rooms[i].id == id)
+				{
+					pos = i;
+					break;
+				}
+			}
+
+			return pos;
+		}
+
+		public int GetRoomPos(uint id)
+		{
+			int pos = -1;
+			for (int i = 0; i < rooms.Length; i++)
+			{
+				if (rooms[i].id == id)
+				{
+					pos = i;
+					break;
+				}
+			}
+
+			return pos;
 		}
 
 		public void Clear()
@@ -92,18 +121,16 @@ public class BiribitManager : MonoBehaviour
 		return m_connectionInfo[(int) connectionId].remoteClients;
 	}
 
-	public int RemoteClients(uint connectionId, uint id)
-	{
-		int pos = -1;
-		ConnectionInfo info = m_connectionInfo[(int)connectionId];
-		if (id < info.remoteClientsById.Count)
-			pos = info.remoteClientsById[(int)id];
-
-		return pos;
+	public int RemoteClients(uint connectionId, uint id) {
+		return m_connectionInfo[(int)connectionId].GetRemoteClientPos(id);
 	}
 
 	public Biribit.Room[] Rooms(uint connectionId) {
 		return m_connectionInfo[(int)connectionId].rooms;
+	}
+
+	public int Rooms(uint connectionId, uint id) {
+		return m_connectionInfo[(int)connectionId].GetRoomPos(id);
 	}
 
 	public uint LocalClientId(uint connectionId) {
@@ -122,13 +149,11 @@ public class BiribitManager : MonoBehaviour
 		return m_connectionInfo[(int)connectionId].entries;
 	}
 
-	public void AddListener(BiribitListener listener)
-	{
+	public void AddListener(BiribitListener listener) {
 		m_listeners.Add(listener);
 	}
 
-	public void DelListener(BiribitListener listener)
-	{
+	public void DelListener(BiribitListener listener) {
 		m_listeners.Remove(listener);
 	}
 
@@ -460,14 +485,12 @@ public class BiribitManager : MonoBehaviour
 		info.joined_room_slot = evnt.slot_id;
 		info.ClearEntries();
 
-		Biribit.Room joined = info.rooms[info.joined_room];
+		Biribit.Room joined = info.rooms[info.GetRoomPos(info.joined_room)];
 		if (info.current_slots.Length < joined.slots.Length)
 			info.current_slots = new uint[joined.slots.Length];
 
 		for (int i = 0; i < joined.slots.Length; i++)
 			info.current_slots[i] = joined.slots[i];
-
-		Debug.Log("Joined room " + info.joined_room + ", slot " + info.joined_room_slot + ".");
 
 		if (info.joined_room > Biribit.Client.UnassignedId)
 			foreach (BiribitListener listener in m_listeners)
@@ -504,7 +527,7 @@ public class BiribitManager : MonoBehaviour
 	private Exception m_ex = null;
 	private void PrintException(Exception ex)
 	{
-		if (m_ex != null)
+		if (m_ex == null)
 			m_ex = ex;
 	}
 }

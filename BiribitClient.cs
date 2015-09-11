@@ -974,7 +974,7 @@ namespace Biribit
 
 		private Exception m_ex = null;
 		private void PrintException(Exception ex) {
-			if (m_ex != null)
+			if (m_ex == null)
 				m_ex = ex;
 		}
 
