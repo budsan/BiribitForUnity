@@ -30,9 +30,14 @@ public class BiribitManager : MonoBehaviour
 		public uint local_id;
 		public uint joined_room;
 		public byte joined_room_slot;
-		public uint[] current_slots = new uint[0];
+		public uint[] lastSlots = new uint[0];
 
 		public List<Biribit.Entry> entries = new List<Biribit.Entry>();
+
+		public ConnectionInfo()
+		{
+			ClearEntries();
+		}
 
 		public void UpdateIds()
 		{
@@ -52,6 +57,15 @@ public class BiribitManager : MonoBehaviour
 		public int GetRemoteClientPos(uint id)
 		{
 			int pos = -1;
+			if (id < remoteClientsById.Count)
+				pos = remoteClientsById[(int)id];
+			
+			return pos;
+		}
+
+		static public int GetRoomPos(Biribit.Room[] rooms, uint id)
+		{
+			int pos = -1;
 			for (int i = 0; i < rooms.Length; i++)
 			{
 				if (rooms[i].id == id)
@@ -66,17 +80,7 @@ public class BiribitManager : MonoBehaviour
 
 		public int GetRoomPos(uint id)
 		{
-			int pos = -1;
-			for (int i = 0; i < rooms.Length; i++)
-			{
-				if (rooms[i].id == id)
-				{
-					pos = i;
-					break;
-				}
-			}
-
-			return pos;
+			return GetRoomPos(rooms, id);
 		}
 
 		public void Clear()
@@ -92,14 +96,16 @@ public class BiribitManager : MonoBehaviour
 
 		public void ClearSlots()
 		{
-			for (int i = 0; i < current_slots.Length; i++)
-				current_slots[i] = Biribit.Client.UnassignedId;
+			for (int i = 0; i < lastSlots.Length; i++)
+				lastSlots[i] = Biribit.Client.UnassignedId;
 		}
 
 		public void ClearEntries()
 		{
-			if (entries.Count > 0)
-				entries.RemoveRange(0, entries.Count);
+			if (entries.Count > 1)
+				entries.RemoveRange(1, entries.Count);
+			else if (entries.Count == 0)
+				entries.Add(new Biribit.Entry());
 		}
 	};
 
@@ -454,21 +460,22 @@ public class BiribitManager : MonoBehaviour
 
 		if (info.joined_room > Biribit.Client.UnassignedId)
 		{
-			Biribit.Room joined = rooms[info.joined_room];
+			int roomPos = ConnectionInfo.GetRoomPos(rooms, info.joined_room);
+			Biribit.Room joined = rooms[roomPos];
 			for (int i = 0; i < joined.slots.Length; i++)
 			{
-				if (info.current_slots[i] != joined.slots[i])
+				if (info.lastSlots[i] != joined.slots[i])
 				{
-					if (info.current_slots[i] == Biribit.Client.UnassignedId)
+					if (info.lastSlots[i] == Biribit.Client.UnassignedId)
 						foreach (BiribitListener listener in m_listeners)
 							try { listener.OnJoinedRoomPlayerJoined(evnt.connection, joined.slots[i], (byte) i); }
 							catch (Exception ex) { PrintException(ex); }
 					else if (joined.slots[i] == Biribit.Client.UnassignedId)
 						foreach (BiribitListener listener in m_listeners)
-							try { listener.OnJoinedRoomPlayerLeft(evnt.connection, info.current_slots[i], (byte)i); }
+							try { listener.OnJoinedRoomPlayerLeft(evnt.connection, info.lastSlots[i], (byte)i); }
 							catch (Exception ex) { PrintException(ex); }
 
-					info.current_slots[i] = joined.slots[i];
+					info.lastSlots[i] = joined.slots[i];
 				}
 			}
 		}
@@ -485,21 +492,26 @@ public class BiribitManager : MonoBehaviour
 		info.joined_room_slot = evnt.slot_id;
 		info.ClearEntries();
 
-		Biribit.Room joined = info.rooms[info.GetRoomPos(info.joined_room)];
-		if (info.current_slots.Length < joined.slots.Length)
-			info.current_slots = new uint[joined.slots.Length];
-
-		for (int i = 0; i < joined.slots.Length; i++)
-			info.current_slots[i] = joined.slots[i];
-
 		if (info.joined_room > Biribit.Client.UnassignedId)
+		{
+			Biribit.Room joined = info.rooms[info.GetRoomPos(info.joined_room)];
+			if (info.lastSlots.Length < joined.slots.Length)
+				info.lastSlots = new uint[joined.slots.Length];
+
+			for (int i = 0; i < joined.slots.Length; i++)
+				info.lastSlots[i] = joined.slots[i];
+
 			foreach (BiribitListener listener in m_listeners)
 				try { listener.OnJoinedRoom(evnt.connection, evnt.room_id, evnt.slot_id); }
 				catch (Exception ex) { PrintException(ex); }
+		}
+			
 		else
+		{
 			foreach (BiribitListener listener in m_listeners)
 				try { listener.OnLeaveRoom(evnt.connection); }
 				catch (Exception ex) { PrintException(ex); }
+		}	
 	}
 
 	private void OnBroadcastEvent(ref Biribit.Native.BroadcastEvent native_evnt)
