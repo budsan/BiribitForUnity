@@ -34,11 +34,6 @@ public class BiribitManager : MonoBehaviour
 
 		public List<Biribit.Entry> entries = new List<Biribit.Entry>();
 
-		public ConnectionInfo()
-		{
-			ClearEntries();
-		}
-
 		public void UpdateIds()
 		{
 			for (int i = 0; i < remoteClientsById.Count; i++)
@@ -102,10 +97,7 @@ public class BiribitManager : MonoBehaviour
 
 		public void ClearEntries()
 		{
-			if (entries.Count > 1)
-				entries.RemoveRange(1, entries.Count);
-			else if (entries.Count == 0)
-				entries.Add(new Biribit.Entry());
+			entries.Clear();
 		}
 	};
 
@@ -209,10 +201,8 @@ public class BiribitManager : MonoBehaviour
 			m_clientCallbackPtr = Marshal.GetFunctionPointerForDelegate(m_clientCallback);
 			NativeMethods.ClientAddLogCallback(m_clientCallbackPtr);
 
-			if (m_clientlistener == null) {
-				m_clientlistener = new ClientListener(this);
-				m_client.AddListener(m_clientlistener);
-			}
+			m_clientlistener = new ClientListener(this);
+			m_client.AddListener(m_clientlistener);
 		}
 		else
 		{
@@ -367,7 +357,7 @@ public class BiribitManager : MonoBehaviour
 
 		m_connectionInfo[(int)connectionId].remoteClients = Biribit.Interop.PtrToArray<Biribit.Native.RemoteClient>(array.arr, array.size);
 		m_connectionInfo[(int)connectionId].UpdateIds();
-    }
+	}
 
 	private void OnGetRoom(uint connectionId, Biribit.Native.Room_array array)
 	{
@@ -526,8 +516,11 @@ public class BiribitManager : MonoBehaviour
 	{
 		uint count = m_client.GetEntriesCount(evnt.connection);
 		var info = m_connectionInfo[(int) evnt.connection];
-		for (uint i = (uint) info.entries.Count; i <= count; i++) {
+		for (uint i = (uint) (info.entries.Count + 1); i <= count; i++) {
 			Biribit.Native.Entry native_entry = m_client.GetEntry(evnt.connection, i);
+			if (native_entry.data == IntPtr.Zero)
+				break;
+
 			info.entries.Add(new Biribit.Entry(native_entry));
 		}
 
