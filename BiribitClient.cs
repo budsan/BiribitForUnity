@@ -799,6 +799,11 @@ namespace Biribit
 			m_listeners.Remove(listener);
 		}
 
+		public void ClearListeners()
+		{
+			m_listeners.Clear();
+		}
+
 		protected HandleRef GetClientPtr()
 		{
 			if (m_client.Handle == IntPtr.Zero)

@@ -202,6 +202,7 @@ public class BiribitManager : MonoBehaviour
 			NativeMethods.ClientAddLogCallback(m_clientCallbackPtr);
 
 			m_clientlistener = new ClientListener(this);
+			m_client.ClearListeners();
 			m_client.AddListener(m_clientlistener);
 		}
 		else
