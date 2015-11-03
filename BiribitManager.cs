@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 
 public interface BiribitListener
 {
+	void OnServerListUpdated();
+
 	void OnConnected(uint connectionId);
 	void OnDisconnected(uint connectionId);
 
@@ -344,6 +346,10 @@ public class BiribitManager : MonoBehaviour
 	private void OnGetServerInfo(Biribit.Native.ServerInfo_array array)
 	{
 		m_serverInfo = Biribit.Interop.PtrToArray<Biribit.Native.ServerInfo>(array.arr, array.size);
+
+		foreach (BiribitListener listener in m_listeners)
+			try { listener.OnServerListUpdated(); }
+			catch (Exception ex) { PrintException(ex); }
 	}
 
 	private void OnGetConnection(Biribit.Native.Connection_array array)
