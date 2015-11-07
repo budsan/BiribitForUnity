@@ -139,7 +139,7 @@ public class BiribitManager : MonoBehaviour
 				if (length < remoteclient.id)
 					length = remoteclient.id;
 
-			remoteClientsIndex = new int[length];
+			remoteClientsIndex = new int[length + 1];
 			for (int index = 0; index < remoteClientsIndex.Length; index++)
 				remoteClientsIndex[index] = -1;
 
@@ -154,7 +154,7 @@ public class BiribitManager : MonoBehaviour
 				if (length < room.id)
 					length = room.id;
 
-			roomsIndex = new int[length];
+			roomsIndex = new int[length + 1];
 			for (int index = 0; index < roomsIndex.Length; index++)
 				roomsIndex[index] = -1;
 
