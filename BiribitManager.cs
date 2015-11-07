@@ -33,7 +33,9 @@ public interface BiribitConnectionView
 	byte JoinedRoomSlotId { get; }
 
 	Biribit.Room JoinedRoom { get; }
-	Biribit.Native.RemoteClient GetRemoteClientFromSlot(uint slotId);
+	Biribit.Native.RemoteClient GetRemoteClientFromSlot(byte slotId);
+
+	List<Biribit.Entry> Entries { get; }
 }
 
 public interface BiribitManagerListener
@@ -51,8 +53,6 @@ public interface BiribitManagerListener
 	void OnBroadcast(Biribit.BroadcastEvent evnt);
 	void OnEntriesChanged(uint connectionId);
 	void OnLeaveRoom(uint connectionId);
-
-	List<Biribit.Entry> Entries { get; }
 }
 
 public class BiribitManager : MonoBehaviour
@@ -121,7 +121,7 @@ public class BiribitManager : MonoBehaviour
 		public byte JoinedRoomSlotId { get { return joined_room_slot; } }
 
 		public Biribit.Room JoinedRoom { get { return GetRoom(JoinedRoomId); } }
-		public Biribit.Native.RemoteClient GetRemoteClientFromSlot(uint slotId)
+		public Biribit.Native.RemoteClient GetRemoteClientFromSlot(byte slotId)
 		{
 			return GetRemoteClient(JoinedRoom.slots[slotId]);
 		}
