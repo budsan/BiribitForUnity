@@ -3,7 +3,40 @@ using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
 
-public interface BiribitListener
+public class BiribitRemoteClientNotFoundException : Exception
+{
+	public BiribitRemoteClientNotFoundException() { }
+	public BiribitRemoteClientNotFoundException(string message) : base(message) { }
+	public BiribitRemoteClientNotFoundException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BiribitRoomNotFoundException : Exception
+{
+	public BiribitRoomNotFoundException() {}
+	public BiribitRoomNotFoundException(string message) : base(message) {}
+	public BiribitRoomNotFoundException(string message, Exception inner) : base(message, inner) {}
+}
+
+public interface BiribitConnectionView
+{
+	Biribit.Native.RemoteClient[] RemoteClients { get; }
+	Biribit.Room[] Rooms { get; }
+
+	int GetRemoteClientIndex(uint id);
+	int GetRoomIndex(uint id);
+
+	Biribit.Native.RemoteClient GetRemoteClient(uint id);
+	Biribit.Room GetRoom(uint id);
+
+	uint LocalId { get; }
+	uint JoinedRoomId { get; }
+	byte JoinedRoomSlotId { get; }
+
+	Biribit.Room JoinedRoom { get; }
+	Biribit.Native.RemoteClient GetRemoteClientFromSlot(uint slotId);
+}
+
+public interface BiribitManagerListener
 {
 	void OnServerListUpdated();
 
@@ -18,66 +51,115 @@ public interface BiribitListener
 	void OnBroadcast(Biribit.BroadcastEvent evnt);
 	void OnEntriesChanged(uint connectionId);
 	void OnLeaveRoom(uint connectionId);
+
+	List<Biribit.Entry> Entries { get; }
 }
 
 public class BiribitManager : MonoBehaviour
 {
-	protected class ConnectionInfo
+	protected class ConnectionInfo : BiribitConnectionView
 	{
-		public Biribit.Native.RemoteClient[] remoteClients = new Biribit.Native.RemoteClient[0];
-		public List<int> remoteClientsById = new List<int>();
+		private Biribit.Native.RemoteClient[] remoteClients = new Biribit.Native.RemoteClient[0];
+		private int[] remoteClientsIndex = new int[0];
 
-		public Biribit.Room[] rooms = new Biribit.Room[0];
+		private Biribit.Room[] rooms = new Biribit.Room[0];
+		private int[] roomsIndex = new int[0];
 
 		public uint local_id;
 		public uint joined_room;
 		public byte joined_room_slot;
-		public uint[] lastSlots = new uint[0];
+		public uint[] lastSlotsState = new uint[0];
 
-		public List<Biribit.Entry> entries = new List<Biribit.Entry>();
-
-		public void UpdateIds()
+		public Biribit.Native.RemoteClient[] RemoteClients
 		{
-			for (int i = 0; i < remoteClientsById.Count; i++)
-				remoteClientsById[i] = -1;
-
-			for (int i = 0; i < remoteClients.Length; i++)
-			{
-				uint id = remoteClients[i].id;
-				while (id >= remoteClientsById.Count)
-					remoteClientsById.Add(-1);
-
-				remoteClientsById[(int) id] = i;
-			}
+			get { return remoteClients; }
+			set { remoteClients = value; RebuildRemoteClientsIndex(); }
 		}
 
-		public int GetRemoteClientPos(uint id)
+		public Biribit.Room[] Rooms
 		{
-			int pos = -1;
-			if (id < remoteClientsById.Count)
-				pos = remoteClientsById[(int)id];
-			
-			return pos;
+			get { return rooms; }
+			set { rooms = value; RebuildRoomsIndex(); }
 		}
 
-		static public int GetRoomPos(Biribit.Room[] rooms, uint id)
+		public int GetRemoteClientIndex(uint id)
 		{
-			int pos = -1;
-			for (int i = 0; i < rooms.Length; i++)
-			{
-				if (rooms[i].id == id)
-				{
-					pos = i;
-					break;
-				}
-			}
-
-			return pos;
+			if (id < 0 && id >= remoteClientsIndex.Length)
+				return -1;
+			else
+				return remoteClientsIndex[id];
 		}
 
-		public int GetRoomPos(uint id)
+		public int GetRoomIndex(uint id)
 		{
-			return GetRoomPos(rooms, id);
+			if (id < 0 && id >= roomsIndex.Length)
+				return -1;
+			else
+				return roomsIndex[id];
+		}
+
+		public Biribit.Room GetRoom(uint id)
+		{
+			int index = GetRoomIndex(id);
+			if (index < 0)
+				throw new BiribitRoomNotFoundException();
+
+			return rooms[index];
+		}
+
+		public Biribit.Native.RemoteClient GetRemoteClient(uint id)
+		{
+			int index = GetRemoteClientIndex(id);
+			if (index < 0)
+				throw new BiribitRemoteClientNotFoundException();
+
+			return remoteClients[index];
+		}
+
+		public uint LocalId { get { return local_id; } }
+		public uint JoinedRoomId { get { return joined_room; } }
+		public byte JoinedRoomSlotId { get { return joined_room_slot; } }
+
+		public Biribit.Room JoinedRoom { get { return GetRoom(JoinedRoomId); } }
+		public Biribit.Native.RemoteClient GetRemoteClientFromSlot(uint slotId)
+		{
+			return GetRemoteClient(JoinedRoom.slots[slotId]);
+		}
+
+		private List<Biribit.Entry> entries = new List<Biribit.Entry>();
+		public List<Biribit.Entry> Entries
+		{
+			get { return entries; }
+		}
+
+		private void RebuildRemoteClientsIndex()
+		{
+			uint length = 0;
+			foreach (Biribit.Native.RemoteClient remoteclient in remoteClients)
+				if (length < remoteclient.id)
+					length = remoteclient.id;
+
+			remoteClientsIndex = new int[length];
+			for (int index = 0; index < remoteClientsIndex.Length; index++)
+				remoteClientsIndex[index] = -1;
+
+			for (int index = 0; index < remoteClients.Length; index++)
+				remoteClientsIndex[remoteClients[index].id] = index;
+		}
+
+		private void RebuildRoomsIndex()
+		{
+			uint length = 0;
+			foreach (Biribit.Room room in rooms)
+				if (length < room.id)
+					length = room.id;
+
+			roomsIndex = new int[length];
+			for (int index = 0; index < roomsIndex.Length; index++)
+				roomsIndex[index] = -1;
+
+			for (int index = 0; index < rooms.Length; index++)
+				roomsIndex[rooms[index].id] = index;
 		}
 
 		public void Clear()
@@ -93,8 +175,8 @@ public class BiribitManager : MonoBehaviour
 
 		public void ClearSlots()
 		{
-			for (int i = 0; i < lastSlots.Length; i++)
-				lastSlots[i] = Biribit.Client.UnassignedId;
+			for (int i = 0; i < lastSlotsState.Length; i++)
+				lastSlotsState[i] = Biribit.Client.UnassignedId;
 		}
 
 		public void ClearEntries()
@@ -108,7 +190,7 @@ public class BiribitManager : MonoBehaviour
 	private delegate void ClientLogCallbackDelegate(string msg);
 	private ClientLogCallbackDelegate m_clientCallback = null;
 	private IntPtr m_clientCallbackPtr;
-	private HashSet<BiribitListener> m_listeners = new HashSet<BiribitListener>();
+	private HashSet<BiribitManagerListener> m_listeners = new HashSet<BiribitManagerListener>();
 
 	private Biribit.Native.ServerInfo[] m_serverInfo = new Biribit.Native.ServerInfo[0];
 	private Biribit.Native.Connection[] m_connection = new Biribit.Native.Connection[0];
@@ -117,43 +199,15 @@ public class BiribitManager : MonoBehaviour
 	public Biribit.Native.ServerInfo[] ServerInfo { get { return m_serverInfo; } }
 	public Biribit.Native.Connection[] Connections { get { return m_connection; } }
 
-	public Biribit.Native.RemoteClient[] RemoteClients(uint connectionId) {
-		return m_connectionInfo[(int) connectionId].remoteClients;
+	public BiribitConnectionView GetConnection(uint connectionId) {
+		return m_connectionInfo[(int)connectionId];
 	}
 
-	public int RemoteClients(uint connectionId, uint id) {
-		return m_connectionInfo[(int)connectionId].GetRemoteClientPos(id);
-	}
-
-	public Biribit.Room[] Rooms(uint connectionId) {
-		return m_connectionInfo[(int)connectionId].rooms;
-	}
-
-	public int Rooms(uint connectionId, uint id) {
-		return m_connectionInfo[(int)connectionId].GetRoomPos(id);
-	}
-
-	public uint LocalClientId(uint connectionId) {
-		return m_connectionInfo[(int)connectionId].local_id;
-	}
-
-	public uint JoinedRoom(uint connectionId) {
-		return m_connectionInfo[(int)connectionId].joined_room;
-	}
-
-	public uint JoinedRoomSlot(uint connectionId) {
-		return m_connectionInfo[(int)connectionId].joined_room_slot;
-	}
-
-	public List<Biribit.Entry> JoinedRoomEntries(uint connectionId) {
-		return m_connectionInfo[(int)connectionId].entries;
-	}
-
-	public void AddListener(BiribitListener listener) {
+	public void AddListener(BiribitManagerListener listener) {
 		m_listeners.Add(listener);
 	}
 
-	public void DelListener(BiribitListener listener) {
+	public void DelListener(BiribitManagerListener listener) {
 		m_listeners.Remove(listener);
 	}
 
@@ -347,7 +401,7 @@ public class BiribitManager : MonoBehaviour
 	{
 		m_serverInfo = Biribit.Interop.PtrToArray<Biribit.Native.ServerInfo>(array.arr, array.size);
 
-		foreach (BiribitListener listener in m_listeners)
+		foreach (BiribitManagerListener listener in m_listeners)
 			try { listener.OnServerListUpdated(); }
 			catch (Exception ex) { PrintException(ex); }
 	}
@@ -362,8 +416,7 @@ public class BiribitManager : MonoBehaviour
 		while (m_connectionInfo.Count <= connectionId)
 			m_connectionInfo.Add(new ConnectionInfo());
 
-		m_connectionInfo[(int)connectionId].remoteClients = Biribit.Interop.PtrToArray<Biribit.Native.RemoteClient>(array.arr, array.size);
-		m_connectionInfo[(int)connectionId].UpdateIds();
+		m_connectionInfo[(int)connectionId].RemoteClients = Biribit.Interop.PtrToArray<Biribit.Native.RemoteClient>(array.arr, array.size);
 	}
 
 	private void OnGetRoom(uint connectionId, Biribit.Native.Room_array array)
@@ -371,7 +424,7 @@ public class BiribitManager : MonoBehaviour
 		while (m_connectionInfo.Count <= connectionId)
 			m_connectionInfo.Add(new ConnectionInfo());
 
-		m_connectionInfo[(int)connectionId].rooms = Biribit.Interop.NativeToArray(array);
+		m_connectionInfo[(int)connectionId].Rooms = Biribit.Interop.NativeToArray(array);
 	}
 
 	private void OnErrorEvent(ref Biribit.Native.ErrorEvent evnt)
@@ -394,14 +447,14 @@ public class BiribitManager : MonoBehaviour
 					m_connectionInfo.Add(new ConnectionInfo());
 
 				Debug.Log("Successfully connected! Id: " + evnt.connection.id);
-				foreach (BiribitListener listener in m_listeners)
+				foreach (BiribitManagerListener listener in m_listeners)
 					try { listener.OnConnected(evnt.connection.id); }
 					catch (Exception ex) { PrintException(ex); }
 				break;
 			case Biribit.Native.ConnectionEventType.TYPE_DISCONNECTION:
 				m_connectionInfo[(int) evnt.connection.id].Clear();
 				Debug.Log("Disconnected!");
-				foreach (BiribitListener listener in m_listeners)
+				foreach (BiribitManagerListener listener in m_listeners)
 					try { listener.OnDisconnected(evnt.connection.id); }
 					catch (Exception ex) { PrintException(ex); }
 				break;
@@ -457,27 +510,26 @@ public class BiribitManager : MonoBehaviour
 
 		if (info.joined_room > Biribit.Client.UnassignedId)
 		{
-			int roomPos = ConnectionInfo.GetRoomPos(rooms, info.joined_room);
-			Biribit.Room joined = rooms[roomPos];
+			Biribit.Room joined = info.GetRoom(info.joined_room);
 			for (int i = 0; i < joined.slots.Length; i++)
 			{
-				if (info.lastSlots[i] != joined.slots[i])
+				if (info.lastSlotsState[i] != joined.slots[i])
 				{
-					if (info.lastSlots[i] == Biribit.Client.UnassignedId)
-						foreach (BiribitListener listener in m_listeners)
+					if (info.lastSlotsState[i] == Biribit.Client.UnassignedId)
+						foreach (BiribitManagerListener listener in m_listeners)
 							try { listener.OnJoinedRoomPlayerJoined(evnt.connection, joined.slots[i], (byte) i); }
 							catch (Exception ex) { PrintException(ex); }
 					else if (joined.slots[i] == Biribit.Client.UnassignedId)
-						foreach (BiribitListener listener in m_listeners)
-							try { listener.OnJoinedRoomPlayerLeft(evnt.connection, info.lastSlots[i], (byte)i); }
+						foreach (BiribitManagerListener listener in m_listeners)
+							try { listener.OnJoinedRoomPlayerLeft(evnt.connection, info.lastSlotsState[i], (byte)i); }
 							catch (Exception ex) { PrintException(ex); }
 
-					info.lastSlots[i] = joined.slots[i];
+					info.lastSlotsState[i] = joined.slots[i];
 				}
 			}
 		}
 
-		info.rooms = rooms;
+		info.Rooms = rooms;
 	}
 
 	private void OnJoinedRoomEvent(ref Biribit.Native.JoinedRoomEvent evnt)
@@ -491,21 +543,21 @@ public class BiribitManager : MonoBehaviour
 
 		if (info.joined_room > Biribit.Client.UnassignedId)
 		{
-			Biribit.Room joined = info.rooms[info.GetRoomPos(info.joined_room)];
-			if (info.lastSlots.Length < joined.slots.Length)
-				info.lastSlots = new uint[joined.slots.Length];
+			Biribit.Room joined = info.Rooms[info.GetRoomIndex(info.joined_room)];
+			if (info.lastSlotsState.Length < joined.slots.Length)
+				info.lastSlotsState = new uint[joined.slots.Length];
 
 			for (int i = 0; i < joined.slots.Length; i++)
-				info.lastSlots[i] = joined.slots[i];
+				info.lastSlotsState[i] = joined.slots[i];
 
-			foreach (BiribitListener listener in m_listeners)
+			foreach (BiribitManagerListener listener in m_listeners)
 				try { listener.OnJoinedRoom(evnt.connection, evnt.room_id, evnt.slot_id); }
 				catch (Exception ex) { PrintException(ex); }
 		}
 			
 		else
 		{
-			foreach (BiribitListener listener in m_listeners)
+			foreach (BiribitManagerListener listener in m_listeners)
 				try { listener.OnLeaveRoom(evnt.connection); }
 				catch (Exception ex) { PrintException(ex); }
 		}	
@@ -514,7 +566,7 @@ public class BiribitManager : MonoBehaviour
 	private void OnBroadcastEvent(ref Biribit.Native.BroadcastEvent native_evnt)
 	{
 		Biribit.BroadcastEvent envt = new Biribit.BroadcastEvent(native_evnt);
-		foreach (BiribitListener listener in m_listeners)
+		foreach (BiribitManagerListener listener in m_listeners)
 			try { listener.OnBroadcast(envt); }
 			catch (Exception ex) { PrintException(ex); }
 	}
@@ -523,15 +575,15 @@ public class BiribitManager : MonoBehaviour
 	{
 		uint count = m_client.GetEntriesCount(evnt.connection);
 		var info = m_connectionInfo[(int) evnt.connection];
-		for (uint i = (uint) (info.entries.Count + 1); i <= count; i++) {
+		for (uint i = (uint) (info.Entries.Count + 1); i <= count; i++) {
 			Biribit.Native.Entry native_entry = m_client.GetEntry(evnt.connection, i);
 			if (native_entry.data == IntPtr.Zero)
 				break;
 
-			info.entries.Add(new Biribit.Entry(native_entry));
+			info.Entries.Add(new Biribit.Entry(native_entry));
 		}
 
-		foreach (BiribitListener listener in m_listeners)
+		foreach (BiribitManagerListener listener in m_listeners)
 			try { listener.OnEntriesChanged(evnt.connection); }
 			catch (Exception ex) { PrintException(ex); }
 	}
